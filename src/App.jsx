@@ -6,10 +6,14 @@ import Queue from "./components/Queue.jsx";
 const BENTO_CELL =
   "bg-base-100 border-2 border-base-content rounded-box shadow-[6px_6px_0_0] shadow-base-content overflow-hidden";
 
+const THEMES = ["violet", "marine", "orange", "marron"];
+
 function App() {
   const [current, setCurrent] = useState(null);
   const [queue, setQueue] = useState([]);
   const [category, setCategory] = useState("Tous");
+  const [color, setColor] = useState("orange");
+  const [mode, setMode] = useState("light");
 
   function addToQueue(movie) {
     setQueue((q) => {
@@ -49,8 +53,28 @@ function App() {
   const categories = ["Tous", ...new Set(MOVIES.map((m) => m.genre))];
 
   return (
-    <div className="min-h-screen bg-base-200">
+    <div data-theme={`${color}-${mode}`} className="min-h-screen bg-base-200">
       <main className="max-w-7xl mx-auto p-4 space-y-10">
+        <div className="flex flex-wrap items-center gap-2">
+          {THEMES.map((t) => (
+            <button
+              key={t}
+              type="button"
+              className={`btn btn-sm capitalize ${color === t ? "btn-primary" : "btn-ghost"}`}
+              onClick={() => setColor(t)}
+            >
+              {t}
+            </button>
+          ))}
+
+          <button
+            type="button"
+            className="btn btn-sm btn-outline ml-auto"
+            onClick={() => setMode((m) => (m === "light" ? "dark" : "light"))}
+          >
+            {mode === "light" ? "🌙 Nuit" : "☀️ Jour"}
+          </button>
+        </div>
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-5">
           <div
             className={`${BENTO_CELL} col-span-2 lg:col-span-3 lg:row-span-2`}
@@ -78,7 +102,6 @@ function App() {
               <Queue queue={queue} onRemove={removeFromQueue} />
             </div>
           </div>
-
           <div className={`${BENTO_CELL} bg-primary text-primary-content p-5`}>
             <p className="text-5xl font-black">{MOVIES.length}</p>
             <p className="font-bold">films</p>
