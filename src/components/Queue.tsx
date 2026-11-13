@@ -1,4 +1,11 @@
-function Queue({ queue, onRemove }) {
+import type { Movie } from "../models/movie.ts";
+
+type QueueProps = {
+  queue: Movie[];
+  onRemove: (movieId: number) => void;
+};
+
+function Queue({ queue, onRemove }: QueueProps) {
   if (queue.length === 0) {
     return <p className="p-4 opacity-60">File vide</p>;
   }

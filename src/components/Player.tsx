@@ -1,4 +1,10 @@
-function Player({ movie }) {
+import type { Movie } from "../models/movie.ts";
+
+type PlayerProps = {
+  movie: Movie | null;
+};
+
+function Player({ movie }: PlayerProps) {
   if (!movie) {
     return <p className="p-6 text-center">Choisissez un film pour le lire</p>;
   }

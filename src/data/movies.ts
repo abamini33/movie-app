@@ -1,4 +1,6 @@
-export const MOVIES = [
+import type { Movie } from "../models/movie.ts";
+
+export const MOVIES: Movie[] = [
   {
     id: 1,
     title: "Inception",
@@ -131,6 +133,6 @@ export const MOVIES = [
   },
 ];
 
-export const youtubeThumbnail = (youtubeID) => {
+export const youtubeThumbnail = (youtubeID: string): string => {
   return `https://img.youtube.com/vi/${youtubeID}/hqdefault.jpg`;
 };

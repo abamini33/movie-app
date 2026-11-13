@@ -1,28 +1,32 @@
-import { MOVIES, youtubeThumbnail } from "./data/movies.js";
+import { MOVIES, youtubeThumbnail } from "./data/movies.ts";
+import type { Movie } from "./models/movie.ts";
 import { useState } from "react";
-import Player from "./components/Player.jsx";
-import Queue from "./components/Queue.jsx";
+import Player from "./components/Player.tsx";
+import Queue from "./components/Queue.tsx";
 
 const BENTO_CELL =
   "bg-base-100 border-2 border-base-content rounded-box shadow-[6px_6px_0_0] shadow-base-content overflow-hidden";
 
-const THEMES = ["violet", "marine", "orange", "marron"];
+const THEMES = ["violet", "marine", "orange", "marron"] as const;
+
+type ThemeColor = (typeof THEMES)[number];
+type ThemeMode = "light" | "dark";
 
 function App() {
-  const [current, setCurrent] = useState(null);
-  const [queue, setQueue] = useState([]);
-  const [category, setCategory] = useState("Tous");
-  const [color, setColor] = useState("orange");
-  const [mode, setMode] = useState("light");
+  const [current, setCurrent] = useState<Movie | null>(null);
+  const [queue, setQueue] = useState<Movie[]>([]);
+  const [category, setCategory] = useState<string>("Tous");
+  const [color, setColor] = useState<ThemeColor>("orange");
+  const [mode, setMode] = useState<ThemeMode>("light");
 
-  function addToQueue(movie) {
+  function addToQueue(movie: Movie) {
     setQueue((q) => {
       if (q.some((m) => m.id === movie.id)) return q;
       return [...q, movie];
     });
   }
 
-  function removeFromQueue(movieId) {
+  function removeFromQueue(movieId: number) {
     setQueue((q) => q.filter((m) => m.id !== movieId));
   }
 
@@ -35,16 +39,16 @@ function App() {
     setQueue((q) => q.slice(1));
   }
 
-  function playNext(movie) {
+  function playNext(movie: Movie) {
     setQueue((q) => [movie, ...q.filter((m) => m.id !== movie.id)]);
   }
 
-  function play(movie) {
+  function play(movie: Movie) {
     setCurrent(movie);
     setQueue((q) => q.filter((m) => m.id !== movie.id));
   }
 
-  function filterMovies() {
+  function filterMovies(): Movie[] {
     if (category === "Tous") return MOVIES;
     return MOVIES.filter((movie) => movie.genre === category);
   }
