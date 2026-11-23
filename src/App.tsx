@@ -33,7 +33,7 @@ function App() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchTopRated(3)
+    fetchTopRated(5)
       .then((movies) => setTopMovies(movies))
       .catch(() =>
         setError(
@@ -225,7 +225,7 @@ function App() {
             )}
 
             {!loading && !error && (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {topMovies.map((movie, index) => renderCard(movie, index + 1))}
               </div>
             )}
@@ -249,7 +249,7 @@ function App() {
               ))}
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {filteredMovies.map((movie) => renderCard(movie))}
             </div>
           </section>

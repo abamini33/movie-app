@@ -12,6 +12,7 @@ type TmdbMovieDetails = {
   overview: string;
   release_date: string; // "2010-07-15"
   runtime: number | null; // en minutes
+  backdrop_path: string | null; // "/xyz.jpg"
   vote_average: number; // sur 10
   genres: { id: number; name: string }[];
   credits: {
@@ -64,6 +65,9 @@ function toMovie(details: TmdbMovieDetails): Movie | null {
     duration: details.runtime ?? 0,
     rating: Math.round(details.vote_average * 10) / 10,
     cast: details.credits.cast.slice(0, 3).map((p) => p.name),
+    image: details.backdrop_path
+      ? `https://image.tmdb.org/t/p/w780${details.backdrop_path}`
+      : undefined,
   };
 }
 

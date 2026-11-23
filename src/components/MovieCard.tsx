@@ -29,10 +29,10 @@ function MovieCard({
   onToggleDetail,
 }: MovieCardProps) {
   return (
-    <div className="card bg-base-100 shadow h-full">
+    <div className="card bg-base-100 shadow">
       <figure className="relative">
         <img
-          src={youtubeThumbnail(movie.youtubeID)}
+          src={movie.image ?? youtubeThumbnail(movie.youtubeID)}
           alt={movie.title}
           className="aspect-video w-full object-cover"
         />
