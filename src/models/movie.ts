@@ -6,4 +6,7 @@ export type Movie = {
   genre: string;
   youtubeID: string;
   synopsis: string;
+  duration: number; // en minutes
+  rating: number; // note sur 10
+  cast: string[]; // acteurs principaux
 };

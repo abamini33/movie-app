@@ -1,8 +1,19 @@
-import { MOVIES, youtubeThumbnail } from "./data/movies.ts";
+import { youtubeThumbnail } from "./data/movies.ts";
+import {
+  getMovies,
+  getMoviesByGenre,
+  getGenres,
+} from "./services/movieService.ts";
 import type { Movie } from "./models/movie.ts";
 import { useState } from "react";
 import Player from "./components/Player.tsx";
 import Queue from "./components/Queue.tsx";
+
+function formatDuration(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${h}h${m.toString().padStart(2, "0")}`;
+}
 
 const BENTO_CELL =
   "bg-base-100 border-2 border-base-content rounded-box shadow-[6px_6px_0_0] shadow-base-content overflow-hidden";
@@ -18,6 +29,7 @@ function App() {
   const [category, setCategory] = useState<string>("Tous");
   const [color, setColor] = useState<ThemeColor>("orange");
   const [mode, setMode] = useState<ThemeMode>("light");
+  const [openDetailId, setOpenDetailId] = useState<number | null>(null);
 
   function addToQueue(movie: Movie) {
     setQueue((q) => {
@@ -48,13 +60,16 @@ function App() {
     setQueue((q) => q.filter((m) => m.id !== movie.id));
   }
 
-  function filterMovies(): Movie[] {
-    if (category === "Tous") return MOVIES;
-    return MOVIES.filter((movie) => movie.genre === category);
+  function toggleDetail(movieId: number) {
+    setOpenDetailId((id) => (id === movieId ? null : movieId));
   }
 
-  const filteredMovies = filterMovies();
-  const categories = ["Tous", ...new Set(MOVIES.map((m) => m.genre))];
+  function isInQueue(movie: Movie): boolean {
+    return queue.some((m) => m.id === movie.id);
+  }
+
+  const filteredMovies = getMoviesByGenre(category);
+  const categories = getGenres();
 
   return (
     <div data-theme={`${color}-${mode}`} className="min-h-screen bg-base-200">
@@ -107,7 +122,7 @@ function App() {
             </div>
           </div>
           <div className={`${BENTO_CELL} bg-primary text-primary-content p-5`}>
-            <p className="text-5xl font-black">{MOVIES.length}</p>
+            <p className="text-5xl font-black">{getMovies().length}</p>
             <p className="font-bold">films</p>
           </div>
 
@@ -156,6 +171,25 @@ function App() {
                   {movie.year} · {movie.genre} · {movie.director}
                 </p>
                 <p>{movie.synopsis}</p>
+
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-xs self-start"
+                  onClick={() => toggleDetail(movie.id)}
+                >
+                  {openDetailId === movie.id ? "▲ Masquer" : "▼ Détails"}
+                </button>
+
+                {openDetailId === movie.id && (
+                  <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm bg-base-200 rounded-box p-3">
+                    <dt className="font-bold">Durée</dt>
+                    <dd>{formatDuration(movie.duration)}</dd>
+                    <dt className="font-bold">Note</dt>
+                    <dd>★ {movie.rating.toFixed(1)} / 10</dd>
+                    <dt className="font-bold">Avec</dt>
+                    <dd>{movie.cast.join(", ")}</dd>
+                  </dl>
+                )}
                 <div className="card-actions justify-center gap-2">
                   <button
                     className="btn btn-sm btn-primary"
@@ -174,9 +208,12 @@ function App() {
                   <button
                     className="btn btn-sm btn-outline"
                     type="button"
+                    disabled={isInQueue(movie)}
                     onClick={() => addToQueue(movie)}
                   >
-                    ＋ Mettre dans la file
+                    {isInQueue(movie)
+                      ? "✓ Dans la file"
+                      : "＋ Mettre dans la file"}
                   </button>
                 </div>
               </div>
