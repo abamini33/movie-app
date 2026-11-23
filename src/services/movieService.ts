@@ -13,4 +13,7 @@ export function getMoviesByGenre(genre: string): Movie[] {
 export function getGenres(): string[] {
   return ["Tous", ...new Set(MOVIES.map((m) => m.genre))];
 }
- 
+
+export function getTopRated(limit: number): Movie[] {
+  return [...MOVIES].sort((a, b) => b.rating - a.rating).slice(0, limit);
+}

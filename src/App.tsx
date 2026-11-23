@@ -1,19 +1,14 @@
-import { youtubeThumbnail } from "./data/movies.ts";
 import {
   getMovies,
   getMoviesByGenre,
   getGenres,
+  getTopRated,
 } from "./services/movieService.ts";
 import type { Movie } from "./models/movie.ts";
 import { useState } from "react";
 import Player from "./components/Player.tsx";
 import Queue from "./components/Queue.tsx";
-
-function formatDuration(minutes: number): string {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return `${h}h${m.toString().padStart(2, "0")}`;
-}
+import MovieCard from "./components/MovieCard.tsx";
 
 const BENTO_CELL =
   "bg-base-100 border-2 border-base-content rounded-box shadow-[6px_6px_0_0] shadow-base-content overflow-hidden";
@@ -22,6 +17,7 @@ const THEMES = ["violet", "marine", "orange", "marron"] as const;
 
 type ThemeColor = (typeof THEMES)[number];
 type ThemeMode = "light" | "dark";
+type Page = "accueil" | "movies";
 
 function App() {
   const [current, setCurrent] = useState<Movie | null>(null);
@@ -30,6 +26,7 @@ function App() {
   const [color, setColor] = useState<ThemeColor>("orange");
   const [mode, setMode] = useState<ThemeMode>("light");
   const [openDetailId, setOpenDetailId] = useState<number | null>(null);
+  const [page, setPage] = useState<Page>("accueil");
 
   function addToQueue(movie: Movie) {
     setQueue((q) => {
@@ -68,12 +65,50 @@ function App() {
     return queue.some((m) => m.id === movie.id);
   }
 
+  function renderCard(movie: Movie, rank?: number) {
+    return (
+      <MovieCard
+        key={movie.id}
+        movie={movie}
+        rank={rank}
+        inQueue={isInQueue(movie)}
+        detailOpen={openDetailId === movie.id}
+        onPlay={() => play(movie)}
+        onPlayNext={() => playNext(movie)}
+        onAddToQueue={() => addToQueue(movie)}
+        onToggleDetail={() => toggleDetail(movie.id)}
+      />
+    );
+  }
+
   const filteredMovies = getMoviesByGenre(category);
   const categories = getGenres();
+  const topMovies = getTopRated(3);
 
   return (
     <div data-theme={`${color}-${mode}`} className="min-h-screen bg-base-200">
       <main className="max-w-7xl mx-auto p-4 space-y-10">
+        <nav role="tablist" aria-label="Pages" className="tabs tabs-box w-fit">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={page === "accueil"}
+            className={`tab text-base font-bold ${page === "accueil" ? "tab-active" : ""}`}
+            onClick={() => setPage("accueil")}
+          >
+            Accueil
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={page === "movies"}
+            className={`tab text-base font-bold ${page === "movies" ? "tab-active" : ""}`}
+            onClick={() => setPage("movies")}
+          >
+            Movies
+          </button>
+        </nav>
+
         <div className="flex flex-wrap items-center gap-2">
           {THEMES.map((t) => (
             <button
@@ -144,82 +179,53 @@ function App() {
             </p>
           </div>
         </section>
-        <div role="tablist" className="tabs tabs-box">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              type="button"
-              className={`tab ${category === cat ? "tab-active" : ""}`}
-              onClick={() => setCategory(cat)}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 p-6">
-          {filteredMovies.map((movie) => (
-            <div key={movie.id} className="card bg-base-100 shadow">
-              <img
-                src={youtubeThumbnail(movie.youtubeID)}
-                alt={movie.title}
-                className="aspect-video w-full object-cover"
-              />
-              <div className="card-body">
-                <h3 className="card-title">{movie.title}</h3>
-                <p>
-                  {movie.year} · {movie.genre} · {movie.director}
+        {page === "accueil" && (
+          <section className="space-y-6">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold uppercase tracking-widest text-primary">
+                  Le classement
                 </p>
-                <p>{movie.synopsis}</p>
-
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-xs self-start"
-                  onClick={() => toggleDetail(movie.id)}
-                >
-                  {openDetailId === movie.id ? "▲ Masquer" : "▼ Détails"}
-                </button>
-
-                {openDetailId === movie.id && (
-                  <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm bg-base-200 rounded-box p-3">
-                    <dt className="font-bold">Durée</dt>
-                    <dd>{formatDuration(movie.duration)}</dd>
-                    <dt className="font-bold">Note</dt>
-                    <dd>★ {movie.rating.toFixed(1)} / 10</dd>
-                    <dt className="font-bold">Avec</dt>
-                    <dd>{movie.cast.join(", ")}</dd>
-                  </dl>
-                )}
-                <div className="card-actions justify-center gap-2">
-                  <button
-                    className="btn btn-sm btn-primary"
-                    type="button"
-                    onClick={() => play(movie)}
-                  >
-                    ▶ Lire
-                  </button>
-                  <button
-                    className="btn btn-sm btn-secondary"
-                    type="button"
-                    onClick={() => playNext(movie)}
-                  >
-                    ⏭ Lire ensuite
-                  </button>
-                  <button
-                    className="btn btn-sm btn-outline"
-                    type="button"
-                    disabled={isInQueue(movie)}
-                    onClick={() => addToQueue(movie)}
-                  >
-                    {isInQueue(movie)
-                      ? "✓ Dans la file"
-                      : "＋ Mettre dans la file"}
-                  </button>
-                </div>
+                <h2 className="text-3xl font-black">
+                  Les 3 films les mieux notés
+                </h2>
               </div>
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={() => setPage("movies")}
+              >
+                Voir tous les films →
+              </button>
             </div>
-          ))}
-        </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {topMovies.map((movie, index) => renderCard(movie, index + 1))}
+            </div>
+          </section>
+        )}
+
+        {page === "movies" && (
+          <section className="space-y-6">
+            <div role="tablist" aria-label="Genres" className="tabs tabs-box">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  role="tab"
+                  aria-selected={category === cat}
+                  className={`tab ${category === cat ? "tab-active" : ""}`}
+                  onClick={() => setCategory(cat)}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredMovies.map((movie) => renderCard(movie))}
+            </div>
+          </section>
+        )}
       </main>
     </div>
   );
