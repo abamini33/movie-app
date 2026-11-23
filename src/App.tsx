@@ -2,10 +2,10 @@ import {
   getMovies,
   getMoviesByGenre,
   getGenres,
-  getTopRated,
+  fetchTopRated,
 } from "./services/movieService.ts";
 import type { Movie } from "./models/movie.ts";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Player from "./components/Player.tsx";
 import Queue from "./components/Queue.tsx";
 import MovieCard from "./components/MovieCard.tsx";
@@ -27,6 +27,21 @@ function App() {
   const [mode, setMode] = useState<ThemeMode>("light");
   const [openDetailId, setOpenDetailId] = useState<number | null>(null);
   const [page, setPage] = useState<Page>("accueil");
+
+  const [topMovies, setTopMovies] = useState<Movie[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchTopRated(3)
+      .then((movies) => setTopMovies(movies))
+      .catch(() =>
+        setError(
+          "Impossible de charger le classement. Le serveur est-il lancé ?",
+        ),
+      )
+      .finally(() => setLoading(false));
+  }, []);
 
   function addToQueue(movie: Movie) {
     setQueue((q) => {
@@ -83,7 +98,6 @@ function App() {
 
   const filteredMovies = getMoviesByGenre(category);
   const categories = getGenres();
-  const topMovies = getTopRated(3);
 
   return (
     <div data-theme={`${color}-${mode}`} className="min-h-screen bg-base-200">
@@ -198,9 +212,23 @@ function App() {
                 Voir tous les films →
               </button>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {topMovies.map((movie, index) => renderCard(movie, index + 1))}
-            </div>
+            {loading && (
+              <p className="text-center opacity-70">
+                Chargement du classement…
+              </p>
+            )}
+
+            {error && (
+              <div role="alert" className="alert alert-error">
+                {error}
+              </div>
+            )}
+
+            {!loading && !error && (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {topMovies.map((movie, index) => renderCard(movie, index + 1))}
+              </div>
+            )}
           </section>
         )}
 

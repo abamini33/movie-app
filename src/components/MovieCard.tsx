@@ -29,7 +29,7 @@ function MovieCard({
   onToggleDetail,
 }: MovieCardProps) {
   return (
-    <div className="card bg-base-100 shadow">
+    <div className="card bg-base-100 shadow h-full">
       <figure className="relative">
         <img
           src={youtubeThumbnail(movie.youtubeID)}
@@ -43,11 +43,13 @@ function MovieCard({
         )}
       </figure>
       <div className="card-body">
-        <h3 className="card-title">{movie.title}</h3>
-        <p>
+        <h3 className="card-title line-clamp-2">{movie.title}</h3>
+        <p className="text-sm opacity-70">
           {movie.year} · {movie.genre} · {movie.director}
         </p>
-        <p>{movie.synopsis}</p>
+        <p className={`text-sm ${detailOpen ? "" : "line-clamp-3"}`}>
+          {movie.synopsis}
+        </p>
 
         <button
           type="button"
@@ -68,7 +70,7 @@ function MovieCard({
           </dl>
         )}
 
-        <div className="card-actions justify-center gap-2">
+        <div className="card-actions justify-center gap-2 mt-auto pt-2">
           <button
             className="btn btn-sm btn-primary"
             type="button"

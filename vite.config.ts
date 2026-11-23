@@ -6,4 +6,9 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   base: '/movie-app/',
   plugins: [react(), tailwindcss()],
+  server: {
+    proxy: {
+      '/api': 'http://localhost:3000',
+    },
+  },
 })

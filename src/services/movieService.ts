@@ -14,6 +14,12 @@ export function getGenres(): string[] {
   return ["Tous", ...new Set(MOVIES.map((m) => m.genre))];
 }
 
-export function getTopRated(limit: number): Movie[] {
-  return [...MOVIES].sort((a, b) => b.rating - a.rating).slice(0, limit);
+export async function fetchTopRated(limit: number): Promise<Movie[]> {
+  const response = await fetch(`/api/movies/top-rated?limit=${limit}`);
+
+  if (!response.ok) {
+    throw new Error(`Le serveur a répondu ${response.status}`);
+  }
+
+  return (await response.json()) as Movie[];
 }
