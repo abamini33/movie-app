@@ -1,10 +1,10 @@
 import {
-  getMovies,
-  getMoviesByGenre,
-  getGenres,
   fetchTopRated,
+  fetchGenres,
+  fetchMovies,
 } from "./services/movieService.ts";
 import type { Movie } from "./models/movie.ts";
+import type { Genre } from "./models/genre.ts";
 import { useEffect, useState } from "react";
 import Player from "./components/Player.tsx";
 import Queue from "./components/Queue.tsx";
@@ -22,7 +22,7 @@ type Page = "accueil" | "movies";
 function App() {
   const [current, setCurrent] = useState<Movie | null>(null);
   const [queue, setQueue] = useState<Movie[]>([]);
-  const [category, setCategory] = useState<string>("Tous");
+  const [genreId, setGenreId] = useState<number | null>(null);
   const [color, setColor] = useState<ThemeColor>("orange");
   const [mode, setMode] = useState<ThemeMode>("light");
   const [openDetailId, setOpenDetailId] = useState<number | null>(null);
@@ -42,6 +42,42 @@ function App() {
       )
       .finally(() => setLoading(false));
   }, []);
+
+  const [genres, setGenres] = useState<Genre[]>([]);
+  const [catalogue, setCatalogue] = useState<Movie[]>([]);
+  const [catalogueLoading, setCatalogueLoading] = useState<boolean>(true);
+  const [catalogueError, setCatalogueError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchGenres()
+      .then((list) => setGenres(list))
+      .catch(() => setGenres([]));
+  }, []);
+
+  useEffect(() => {
+    let ignore = false;
+
+    fetchMovies(genreId)
+      .then((movies) => {
+        if (!ignore) setCatalogue(movies);
+      })
+      .catch(() => {
+        if (!ignore) setCatalogueError("Impossible de charger les films.");
+      })
+      .finally(() => {
+        if (!ignore) setCatalogueLoading(false);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [genreId]);
+
+  function chooseGenre(id: number | null) {
+    setGenreId(id);
+    setCatalogueLoading(true);
+    setCatalogueError(null);
+  }
 
   function addToQueue(movie: Movie) {
     setQueue((q) => {
@@ -95,9 +131,6 @@ function App() {
       />
     );
   }
-
-  const filteredMovies = getMoviesByGenre(category);
-  const categories = getGenres();
 
   return (
     <div data-theme={`${color}-${mode}`} className="min-h-screen bg-base-200">
@@ -171,7 +204,7 @@ function App() {
             </div>
           </div>
           <div className={`${BENTO_CELL} bg-primary text-primary-content p-5`}>
-            <p className="text-5xl font-black">{getMovies().length}</p>
+            <p className="text-5xl font-black">{catalogue.length}</p>
             <p className="font-bold">films</p>
           </div>
 
@@ -234,24 +267,49 @@ function App() {
 
         {page === "movies" && (
           <section className="space-y-6">
-            <div role="tablist" aria-label="Genres" className="tabs tabs-box">
-              {categories.map((cat) => (
+            <div
+              role="tablist"
+              aria-label="Genres"
+              className="tabs tabs-box flex-wrap"
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={genreId === null}
+                className={`tab ${genreId === null ? "tab-active" : ""}`}
+                onClick={() => chooseGenre(null)}
+              >
+                Tous
+              </button>
+              {genres.map((genre) => (
                 <button
-                  key={cat}
+                  key={genre.id}
                   type="button"
                   role="tab"
-                  aria-selected={category === cat}
-                  className={`tab ${category === cat ? "tab-active" : ""}`}
-                  onClick={() => setCategory(cat)}
+                  aria-selected={genreId === genre.id}
+                  className={`tab ${genreId === genre.id ? "tab-active" : ""}`}
+                  onClick={() => chooseGenre(genre.id)}
                 >
-                  {cat}
+                  {genre.name}
                 </button>
               ))}
             </div>
 
-            <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredMovies.map((movie) => renderCard(movie))}
-            </div>
+            {catalogueLoading && (
+              <p className="text-center opacity-70">Chargement des films…</p>
+            )}
+
+            {catalogueError && (
+              <div role="alert" className="alert alert-error">
+                {catalogueError}
+              </div>
+            )}
+
+            {!catalogueLoading && !catalogueError && (
+              <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {catalogue.map((movie) => renderCard(movie))}
+              </div>
+            )}
           </section>
         )}
       </main>

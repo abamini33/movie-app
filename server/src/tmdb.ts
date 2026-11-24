@@ -71,10 +71,18 @@ function toMovie(details: TmdbMovieDetails): Movie | null {
   };
 }
 
-export async function getTopRatedMovies(limit: number): Promise<Movie[]> {
-  const list = await tmdbFetch<TmdbListResponse>(
-    "/discover/movie?language=fr-FR&sort_by=vote_average.desc&vote_count.gte=5000&page=1",
-  );
+type TmdbGenresResponse = {
+  genres: { id: number; name: string }[];
+};
+
+// Prend une liste TMDB, va chercher les détails de chaque film,
+// puis les traduit au format Movie (sans ceux qui n'ont pas de bande-annonce)
+async function getMoviesFromList(
+  listPath: string,
+  limit: number,
+  label: string,
+): Promise<Movie[]> {
+  const list = await tmdbFetch<TmdbListResponse>(listPath);
 
   const details = await Promise.all(
     list.results
@@ -91,8 +99,33 @@ export async function getTopRatedMovies(limit: number): Promise<Movie[]> {
     .filter((movie): movie is Movie => movie !== null);
 
   console.log(
-    `[top-rated] ${details.length} films reçus de TMDB, ${movies.length} gardés (avec bande-annonce)`,
+    `[${label}] ${details.length} films reçus de TMDB, ${movies.length} gardés (avec bande-annonce)`,
   );
 
   return movies;
+}
+
+export function getTopRatedMovies(limit: number): Promise<Movie[]> {
+  return getMoviesFromList(
+    "/discover/movie?language=fr-FR&sort_by=vote_average.desc&vote_count.gte=5000&page=1",
+    limit,
+    "top-rated",
+  );
+}
+
+// Le catalogue : les films populaires, éventuellement filtrés par genre
+export function getCatalogMovies(genreId: number | null): Promise<Movie[]> {
+  const genreFilter = genreId === null ? "" : `&with_genres=${genreId}`;
+  return getMoviesFromList(
+    `/discover/movie?language=fr-FR&sort_by=popularity.desc&vote_count.gte=500${genreFilter}&page=1`,
+    20,
+    genreId === null ? "catalogue" : `catalogue genre ${genreId}`,
+  );
+}
+
+export async function getGenres(): Promise<{ id: number; name: string }[]> {
+  const data = await tmdbFetch<TmdbGenresResponse>(
+    "/genre/movie/list?language=fr-FR",
+  );
+  return data.genres;
 }
