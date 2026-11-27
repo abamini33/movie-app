@@ -18,7 +18,7 @@ export function getGenres(): string[] {
 // L'adresse du serveur :
 // - en développement : vide → les appels "/api/..." passent par le proxy Vite (localhost:3000)
 // - en production : VITE_API_URL (fichier .env.production) → le serveur hébergé
-const API_URL = import.meta.env.VITE_API_URL ?? "";
+const API_URL = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
 
 async function getJson<T>(path: string): Promise<T> {
   const response = await fetch(`${API_URL}${path}`);
