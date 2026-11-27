@@ -2,6 +2,7 @@ import {
   fetchTopRated,
   fetchGenres,
   fetchMovies,
+  searchMovies,
 } from "./services/movieService.ts";
 import type { Movie } from "./models/movie.ts";
 import type { Genre } from "./models/genre.ts";
@@ -49,6 +50,19 @@ function App() {
   const [catalogue, setCatalogue] = useState<Movie[]>([]);
   const [catalogueLoading, setCatalogueLoading] = useState<boolean>(true);
   const [catalogueError, setCatalogueError] = useState<string | null>(null);
+  const [cataloguePage, setCataloguePage] = useState<number>(1);
+  const [loadingMore, setLoadingMore] = useState<boolean>(false);
+  const [hasMore, setHasMore] = useState<boolean>(true);
+
+  // Une recherche n'est lancée qu'à partir de 2 caractères
+  const isSearching = appliedSearch.length >= 2;
+
+  // Va chercher une page : celle de la recherche, ou celle du catalogue
+  function loadPage(pageNumber: number): Promise<Movie[]> {
+    return isSearching
+      ? searchMovies(appliedSearch, pageNumber)
+      : fetchMovies(genreId, pageNumber);
+  }
 
   useEffect(() => {
     fetchGenres()
@@ -59,9 +73,17 @@ function App() {
   useEffect(() => {
     let ignore = false;
 
-    fetchMovies(genreId)
+    const request =
+      appliedSearch.length >= 2
+        ? searchMovies(appliedSearch, 1)
+        : fetchMovies(genreId, 1);
+
+    request
       .then((movies) => {
-        if (!ignore) setCatalogue(movies);
+        if (ignore) return;
+        setCatalogue(movies);
+        setCataloguePage(1);
+        setHasMore(movies.length > 0);
       })
       .catch(() => {
         if (!ignore) setCatalogueError("Impossible de charger les films.");
@@ -73,12 +95,36 @@ function App() {
     return () => {
       ignore = true;
     };
-  }, [genreId]);
+  }, [genreId, appliedSearch]);
 
   function chooseGenre(id: number | null) {
     setGenreId(id);
     setCatalogueLoading(true);
     setCatalogueError(null);
+  }
+
+  function applySearch(text: string) {
+    setAppliedSearch(text.trim());
+    setCatalogueLoading(true);
+    setCatalogueError(null);
+  }
+
+  function loadMore() {
+    const nextPage = cataloguePage + 1;
+    setLoadingMore(true);
+
+    loadPage(nextPage)
+      .then((movies) => {
+        // On ajoute à la suite, sans doublons
+        setCatalogue((list) => [
+          ...list,
+          ...movies.filter((m) => !list.some((old) => old.id === m.id)),
+        ]);
+        setCataloguePage(nextPage);
+        setHasMore(movies.length > 0);
+      })
+      .catch(() => setCatalogueError("Impossible de charger plus de films."))
+      .finally(() => setLoadingMore(false));
   }
 
   function addToQueue(movie: Movie) {
@@ -269,71 +315,84 @@ function App() {
 
         {page === "movies" && (
           <section className="space-y-6">
-            <input
-              type="search"
-              aria-label="Rechercher un film"
-              placeholder="Rechercher un film…"
-              className="input input-bordered w-full max-w-xs"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <button
-              type="button"
-              className="btn btn-outline ml-auto"
-              onClick={() => setAppliedSearch(search.trim())}
-            >
-              Rechercher
-            </button>
-            <button
-              type="button"
-              className="btn btn-outline ml-auto"
-              onClick={() => {
-                setSearch("");
-                setAppliedSearch("");
+            <form
+              role="search"
+              className="flex flex-wrap gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                applySearch(search);
               }}
             >
-              Effacer
-            </button>
+              <input
+                type="search"
+                aria-label="Rechercher un film dans tout le catalogue"
+                placeholder="Rechercher un film (2 lettres minimum)…"
+                className="input input-bordered w-full max-w-xs"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <button type="submit" className="btn btn-primary">
+                Rechercher
+              </button>
+              {isSearching && (
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => {
+                    setSearch("");
+                    applySearch("");
+                  }}
+                >
+                  Effacer
+                </button>
+              )}
+            </form>
 
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-bold uppercase tracking-widest text-primary">
                   Catalogue
                 </p>
-                <h2 className="text-3xl font-black">Tous les films</h2>
+                <h2 className="text-3xl font-black">
+                  {isSearching
+                    ? `Résultats pour « ${appliedSearch} »`
+                    : "Tous les films"}
+                </h2>
               </div>
               <p className="text-sm opacity-70">
                 {catalogue.length} film{catalogue.length > 1 ? "s" : ""}
               </p>
             </div>
-            <div
-              role="tablist"
-              aria-label="Genres"
-              className="tabs tabs-box flex-wrap"
-            >
-              <button
-                type="button"
-                role="tab"
-                aria-selected={genreId === null}
-                className={`tab ${genreId === null ? "tab-active" : ""}`}
-                onClick={() => chooseGenre(null)}
+            {!isSearching && (
+              <div
+                role="tablist"
+                aria-label="Genres"
+                className="tabs tabs-box flex-wrap"
               >
-                Tous
-              </button>
-
-              {genres.map((genre) => (
                 <button
-                  key={genre.id}
                   type="button"
                   role="tab"
-                  aria-selected={genreId === genre.id}
-                  className={`tab ${genreId === genre.id ? "tab-active" : ""}`}
-                  onClick={() => chooseGenre(genre.id)}
+                  aria-selected={genreId === null}
+                  className={`tab ${genreId === null ? "tab-active" : ""}`}
+                  onClick={() => chooseGenre(null)}
                 >
-                  {genre.name}
+                  Tous
                 </button>
-              ))}
-            </div>
+
+                {genres.map((genre) => (
+                  <button
+                    key={genre.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={genreId === genre.id}
+                    className={`tab ${genreId === genre.id ? "tab-active" : ""}`}
+                    onClick={() => chooseGenre(genre.id)}
+                  >
+                    {genre.name}
+                  </button>
+                ))}
+              </div>
+            )}
 
             {catalogueLoading && (
               <p className="text-center opacity-70">Chargement des films…</p>
@@ -346,15 +405,31 @@ function App() {
             )}
 
             {!catalogueLoading && !catalogueError && (
-              <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {catalogue
-                  .filter((movie) =>
-                    movie.title
-                      .toLowerCase()
-                      .includes(appliedSearch.toLowerCase()),
-                  )
-                  .map((movie) => renderCard(movie))}
-              </div>
+              <>
+                {catalogue.length === 0 && (
+                  <p className="text-center opacity-70">
+                    Aucun film trouvé
+                    {isSearching ? ` pour « ${appliedSearch} »` : ""}.
+                  </p>
+                )}
+
+                <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {catalogue.map((movie) => renderCard(movie))}
+                </div>
+
+                {hasMore && catalogue.length > 0 && (
+                  <div className="flex justify-center">
+                    <button
+                      type="button"
+                      className="btn btn-outline"
+                      disabled={loadingMore}
+                      onClick={loadMore}
+                    >
+                      {loadingMore ? "Chargement…" : "Charger plus de films"}
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </section>
         )}

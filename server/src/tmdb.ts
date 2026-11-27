@@ -114,19 +114,22 @@ export function getTopRatedMovies(limit: number): Promise<Movie[]> {
 }
 
 // Le catalogue : les films populaires, éventuellement filtrés par genre
-export function getCatalogMovies(genreId: number | null): Promise<Movie[]> {
+export function getCatalogMovies(
+  genreId: number | null,
+  page: number,
+): Promise<Movie[]> {
   const genreFilter = genreId === null ? "" : `&with_genres=${genreId}`;
   return getMoviesFromList(
-    `/discover/movie?language=fr-FR&sort_by=popularity.desc&vote_count.gte=500${genreFilter}&page=1`,
+    `/discover/movie?language=fr-FR&sort_by=popularity.desc&vote_count.gte=500${genreFilter}&page=${page}`,
     20,
     genreId === null ? "catalogue" : `catalogue genre ${genreId}`,
   );
 }
 
 // La recherche par titre, dans tout TMDB
-export function searchMovies(query: string): Promise<Movie[]> {
+export function searchMovies(query: string, page: number): Promise<Movie[]> {
   return getMoviesFromList(
-    `/search/movie?language=fr-FR&query=${encodeURIComponent(query)}&page=1`,
+    `/search/movie?language=fr-FR&query=${encodeURIComponent(query)}&page=${page}`,
     20,
     `recherche "${query}"`,
   );

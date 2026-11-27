@@ -23,6 +23,29 @@ app.use((req, res, next) => {
   next();
 });
 
+// La page d'accueil de l'API : la liste des routes disponibles
+const ROUTES = {
+  message:
+    "API MovieApp : ce serveur renvoie du JSON, le site est sur GitHub Pages",
+  routes: [
+    "GET /api/health",
+    "GET /api/genres",
+    "GET /api/movies?genre=878&page=2",
+    "GET /api/movies/top-rated?limit=5",
+    "GET /api/movies/search?q=inception&page=1",
+  ],
+};
+app.get(["/", "/api"], (_req, res) => {
+  res.json(ROUTES);
+});
+
+// Lit ?page=… : un entier entre 1 et 500 (la limite de TMDB), 1 par défaut
+function readPage(value: unknown): number | null {
+  if (value === undefined) return 1;
+  const page = Number(value);
+  return Number.isInteger(page) && page >= 1 && page <= 500 ? page : null;
+}
+
 app.get("/api/health", (_req, res) => {
   res.json({
     status: "ok",
@@ -69,8 +92,16 @@ app.get("/api/movies", async (req, res) => {
     return;
   }
 
+  const page = readPage(req.query.page);
+  if (page === null) {
+    res
+      .status(400)
+      .json({ error: "Le paramètre page doit être entre 1 et 500" });
+    return;
+  }
+
   try {
-    res.json(await getCatalogMovies(genre));
+    res.json(await getCatalogMovies(genre, page));
   } catch (error) {
     console.error(error);
     res
@@ -90,8 +121,16 @@ app.get("/api/movies/search", async (req, res) => {
     return;
   }
 
+  const page = readPage(req.query.page);
+  if (page === null) {
+    res
+      .status(400)
+      .json({ error: "Le paramètre page doit être entre 1 et 500" });
+    return;
+  }
+
   try {
-    res.json(await searchMovies(query));
+    res.json(await searchMovies(query, page));
   } catch (error) {
     console.error(error);
     res

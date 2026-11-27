@@ -38,14 +38,21 @@ export function fetchGenres(): Promise<Genre[]> {
   return getJson<Genre[]>("/api/genres");
 }
 
-// genreId = null → tous les genres
-export function fetchMovies(genreId: number | null): Promise<Movie[]> {
-  return getJson<Movie[]>(
-    genreId === null ? "/api/movies" : `/api/movies?genre=${genreId}`,
-  );
+// genreId = null → tous les genres ; page = 1, 2, 3… (20 films par page)
+export function fetchMovies(
+  genreId: number | null,
+  page: number = 1,
+): Promise<Movie[]> {
+  const genre = genreId === null ? "" : `&genre=${genreId}`;
+  return getJson<Movie[]>(`/api/movies?page=${page}${genre}`);
 }
 
 // Recherche dans TOUT le catalogue TMDB (au moins 2 caractères)
-export function searchMovies(query: string): Promise<Movie[]> {
-  return getJson<Movie[]>(`/api/movies/search?q=${encodeURIComponent(query)}`);
+export function searchMovies(
+  query: string,
+  page: number = 1,
+): Promise<Movie[]> {
+  return getJson<Movie[]>(
+    `/api/movies/search?q=${encodeURIComponent(query)}&page=${page}`,
+  );
 }
