@@ -15,49 +15,37 @@ export function getGenres(): string[] {
   return ["Tous", ...new Set(MOVIES.map((m) => m.genre))];
 }
 
-async function readJson<T>(url: string): Promise<T> {
-  const response = await fetch(url);
+// L'adresse du serveur :
+// - en développement : vide → les appels "/api/..." passent par le proxy Vite (localhost:3000)
+// - en production : VITE_API_URL (fichier .env.production) → le serveur hébergé
+const API_URL = import.meta.env.VITE_API_URL ?? "";
+
+async function getJson<T>(path: string): Promise<T> {
+  const response = await fetch(`${API_URL}${path}`);
 
   if (!response.ok) {
-    throw new Error(`${url} a répondu ${response.status}`);
+    throw new Error(`Le serveur a répondu ${response.status}`);
   }
 
   return (await response.json()) as T;
 }
 
-async function getJson<T>(apiPath: string, staticFile: string): Promise<T> {
-  const staticUrl = `${import.meta.env.BASE_URL}data/${staticFile}`;
-
-  if (import.meta.env.DEV) {
-    try {
-      return await readJson<T>(apiPath);
-    } catch {
-      console.warn(`Serveur injoignable, lecture de ${staticUrl}`);
-    }
-  }
-
-  return readJson<T>(staticUrl);
-}
-
 export async function fetchTopRated(limit: number): Promise<Movie[]> {
-  const movies = await getJson<Movie[]>(
-    `/api/movies/top-rated?limit=${limit}`,
-    "top-rated.json",
-  );
-  return movies.slice(0, limit);
+  return getJson<Movie[]>(`/api/movies/top-rated?limit=${limit}`);
 }
 
 export function fetchGenres(): Promise<Genre[]> {
-  return getJson<Genre[]>("/api/genres", "genres.json");
+  return getJson<Genre[]>("/api/genres");
 }
 
 // genreId = null → tous les genres
 export function fetchMovies(genreId: number | null): Promise<Movie[]> {
-  if (genreId === null) {
-    return getJson<Movie[]>("/api/movies", "movies.json");
-  }
   return getJson<Movie[]>(
-    `/api/movies?genre=${genreId}`,
-    `movies-${genreId}.json`,
+    genreId === null ? "/api/movies" : `/api/movies?genre=${genreId}`,
   );
+}
+
+// Recherche dans TOUT le catalogue TMDB (au moins 2 caractères)
+export function searchMovies(query: string): Promise<Movie[]> {
+  return getJson<Movie[]>(`/api/movies/search?q=${encodeURIComponent(query)}`);
 }

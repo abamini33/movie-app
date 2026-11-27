@@ -123,6 +123,15 @@ export function getCatalogMovies(genreId: number | null): Promise<Movie[]> {
   );
 }
 
+// La recherche par titre, dans tout TMDB
+export function searchMovies(query: string): Promise<Movie[]> {
+  return getMoviesFromList(
+    `/search/movie?language=fr-FR&query=${encodeURIComponent(query)}&page=1`,
+    20,
+    `recherche "${query}"`,
+  );
+}
+
 export async function getGenres(): Promise<{ id: number; name: string }[]> {
   const data = await tmdbFetch<TmdbGenresResponse>(
     "/genre/movie/list?language=fr-FR",

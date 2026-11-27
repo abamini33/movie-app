@@ -27,6 +27,8 @@ function App() {
   const [mode, setMode] = useState<ThemeMode>("light");
   const [openDetailId, setOpenDetailId] = useState<number | null>(null);
   const [page, setPage] = useState<Page>("accueil");
+  const [search, setSearch] = useState<string>("");
+  const [appliedSearch, setAppliedSearch] = useState<string>("");
 
   const [topMovies, setTopMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -267,6 +269,43 @@ function App() {
 
         {page === "movies" && (
           <section className="space-y-6">
+            <input
+              type="search"
+              aria-label="Rechercher un film"
+              placeholder="Rechercher un film…"
+              className="input input-bordered w-full max-w-xs"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <button
+              type="button"
+              className="btn btn-outline ml-auto"
+              onClick={() => setAppliedSearch(search.trim())}
+            >
+              Rechercher
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline ml-auto"
+              onClick={() => {
+                setSearch("");
+                setAppliedSearch("");
+              }}
+            >
+              Effacer
+            </button>
+
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold uppercase tracking-widest text-primary">
+                  Catalogue
+                </p>
+                <h2 className="text-3xl font-black">Tous les films</h2>
+              </div>
+              <p className="text-sm opacity-70">
+                {catalogue.length} film{catalogue.length > 1 ? "s" : ""}
+              </p>
+            </div>
             <div
               role="tablist"
               aria-label="Genres"
@@ -281,6 +320,7 @@ function App() {
               >
                 Tous
               </button>
+
               {genres.map((genre) => (
                 <button
                   key={genre.id}
@@ -307,7 +347,13 @@ function App() {
 
             {!catalogueLoading && !catalogueError && (
               <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {catalogue.map((movie) => renderCard(movie))}
+                {catalogue
+                  .filter((movie) =>
+                    movie.title
+                      .toLowerCase()
+                      .includes(appliedSearch.toLowerCase()),
+                  )
+                  .map((movie) => renderCard(movie))}
               </div>
             )}
           </section>

@@ -23,5 +23,3 @@ dist-ssr
 
 .env
 
-# Données TMDB générées au build (jamais commitées)
-public/data/

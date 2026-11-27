@@ -1,8 +1,27 @@
 import express from "express";
-import { getCatalogMovies, getGenres, getTopRatedMovies } from "./tmdb.ts";
+import {
+  getCatalogMovies,
+  getGenres,
+  getTopRatedMovies,
+  searchMovies,
+} from "./tmdb.ts";
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3000);
+
+const allowedOrigins = (process.env.ALLOWED_ORIGIN ?? "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter((origin) => origin !== "");
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+  }
+  next();
+});
 
 app.get("/api/health", (_req, res) => {
   res.json({
@@ -57,6 +76,27 @@ app.get("/api/movies", async (req, res) => {
     res
       .status(502)
       .json({ error: "Impossible de récupérer les films chez TMDB" });
+  }
+});
+
+// GET /api/movies/search?q=inception  → cherche dans TOUT le catalogue TMDB
+app.get("/api/movies/search", async (req, res) => {
+  const query = typeof req.query.q === "string" ? req.query.q.trim() : "";
+
+  if (query.length < 2 || query.length > 100) {
+    res
+      .status(400)
+      .json({ error: "La recherche doit contenir entre 2 et 100 caractères" });
+    return;
+  }
+
+  try {
+    res.json(await searchMovies(query));
+  } catch (error) {
+    console.error(error);
+    res
+      .status(502)
+      .json({ error: "Impossible de rechercher les films chez TMDB" });
   }
 });
 

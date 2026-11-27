@@ -4,8 +4,6 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-  schedule:
-    - cron: "0 4 * * *" # tous les jours à 4 h (UTC) : rafraîchit les données TMDB
 
 permissions:
   contents: read
@@ -28,11 +26,6 @@ jobs:
           cache: npm
 
       - run: npm ci
-
-      - name: Générer les données TMDB
-        run: npm run generate-data
-        env:
-          TMDB_TOKEN: ${{ secrets.TMDB_TOKEN }}
 
       - run: npm run build
 

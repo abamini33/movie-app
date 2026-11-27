@@ -8,8 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "typecheck": "tsc -b",
-    "preview": "vite preview",
-    "generate-data": "node --env-file-if-exists=server/.env scripts/generate-data.ts"
+    "preview": "vite preview"
   },
   "dependencies": {
     "react": "^19.3.1",
