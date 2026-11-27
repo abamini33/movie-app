@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import Player from "./components/Player.tsx";
 import Queue from "./components/Queue.tsx";
 import MovieCard from "./components/MovieCard.tsx";
+import { useLocalStorage } from "./hooks/useLocalStorage.ts";
 
 const BENTO_CELL =
   "bg-base-100 border-2 border-base-content rounded-box shadow-[6px_6px_0_0] shadow-base-content overflow-hidden";
@@ -21,11 +22,26 @@ type ThemeMode = "light" | "dark";
 type Page = "accueil" | "movies";
 
 function App() {
-  const [current, setCurrent] = useState<Movie | null>(null);
-  const [queue, setQueue] = useState<Movie[]>([]);
+  const [current, setCurrent] = useLocalStorage<Movie | null>(
+    "movieapp:current",
+    null,
+  );
+  const [queue, setQueue] = useLocalStorage<Movie[]>(
+    "movieapp:queue",
+    [],
+    (v): v is Movie[] => Array.isArray(v),
+  );
   const [genreId, setGenreId] = useState<number | null>(null);
-  const [color, setColor] = useState<ThemeColor>("orange");
-  const [mode, setMode] = useState<ThemeMode>("light");
+  const [color, setColor] = useLocalStorage<ThemeColor>(
+    "movieapp:color",
+    "orange",
+    (v): v is ThemeColor => THEMES.includes(v as ThemeColor),
+  );
+  const [mode, setMode] = useLocalStorage<ThemeMode>(
+    "movieapp:mode",
+    "light",
+    (v): v is ThemeMode => v === "light" || v === "dark",
+  );
   const [openDetailId, setOpenDetailId] = useState<number | null>(null);
   const [page, setPage] = useState<Page>("accueil");
   const [search, setSearch] = useState<string>("");
